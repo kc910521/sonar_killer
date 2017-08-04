@@ -26,6 +26,7 @@ import com.google.gson.JsonObject;
 
 /**
  * Hello world!
+ * 4 jdk1.8+
  *
  */
 public class App 
@@ -35,13 +36,37 @@ public class App
 
 	//com/kayak/frame/afs
 	public static void main(String[] args) throws FileNotFoundException {
+		//"F:\\cashier-baixin\\src\\com\\kayak"
+		 fd("F:\\cashier-baixin\\src\\com\\kayak");// src/com/kayak/pay/action
+//F:\cashier-baixin\src\com\kayak\consumer\service\HostConsumer.java
+//		rmTypeSpecDmOper(new File("F:\\cashier-baixin\\src\\com\\kayak\\consumer\\service\\PaycoreConsumer.java"));
+		
+		 
+		 FILE_LIST.forEach(f -> {
+//			 rmTypeSpecDmOper(f);
+//			 fillBlankFunc(f);
+		 });
+		 
+		 
+		//
 		//ypa();
-
+		System.out.println("total I/O:" + TOTAL_CG);
 	}
+	
+	
+	private static void rmTypeSpecDmOper(File f) {
+		String content = App.readTxtFile(f);
+		String reg = "(=\\s*new\\s.*[List|Map]<).+(>\\(\\))";
+		if (strHas(content, reg)) {
+			String[] contents = content.split("\\n");
+			String newJaCode = strReplace(content, reg, "$1$2");
+			writeToFile(f, newJaCode);
+		}
+	}
+	
 	//executer
 	private static void ypa() throws FileNotFoundException{
-		//"F:\\cashier-baixin\\src\\com\\kayak"
-		fd("F:\\cashier-baixin\\src\\com\\kayak");// src/com/kayak/pay/action
+		
 		Map<String, Object> constsMap = addTxtToContent();
 		Map<String,Object> constsNbMap = addNumberToContent();
 		FILE_LIST.stream().forEach(f -> {
@@ -56,7 +81,7 @@ public class App
 				e.printStackTrace();
 			}
 		});
-		System.out.println("total I/O:" + TOTAL_CG);
+		
 		//test
 //		rmCodeBlkComment(new File("F:\\cashier-baixin\\src\\com\\kayak\\frame\\action\\ActionService.java"));
 		
@@ -80,6 +105,7 @@ public class App
 					&& !f.getName().startsWith("ConstFix") 
 					&& !f.getName().startsWith("MTest")
 					&& !f.getName().startsWith("ConstMagicNum")
+					&& !f.getName().startsWith("Viracct")
 					) {
 				FILE_LIST.add(f);
 			} else if (f.isDirectory()) {
@@ -183,7 +209,7 @@ public class App
 		allParms.forEach(pm -> {
 			String key = randomStr(10) + "_" + (i++);
 			resMap.put(key, pm);
-			allSent.append("public final static int " + key + " = " + pm + ";\n");
+			allSent.append("public static final int " + key + " = " + pm + ";\n");
 		});
 		String newJavaCode = strReplace(content, "\\{\\n*", "{" + allSent);
 		System.out.println(newJavaCode);
@@ -222,7 +248,7 @@ public class App
 		allParms.forEach(pm -> {
 			String key = randomStr(10) + "_" + (i++);
 			resMap.put(key, pm);
-			allSent.append("public final static String " + key + " = \"" + pm + "\";\n");
+			allSent.append("public static final String " + key + " = \"" + pm + "\";\n");
 		});
 		String newJavaCode = strReplace(content, "\\{\\n*", "{" + allSent);
 		System.out.println(newJavaCode);
@@ -237,10 +263,11 @@ public class App
 	private static void fillBlankFunc(File f) {
 		String content = App.readTxtFile(f);
 		// System.out.println(content);
+		String reg = "\\{[\\t|\\n]*\\}";
 		// 去掉空方法，覆盖为注释
-		if (strHas(content, "\\{\\t*\\}")){
+		if (strHas(content, reg)){
 			System.out.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" + f.getName());
-			String newJaCode = strReplace(content, "\\{\\t*\\}", "{/** i am blank **/}");
+			String newJaCode = strReplace(content, reg, "{/** i am blank **/}");
 			writeToFile(f, newJaCode);
 		}
 	}
@@ -326,6 +353,15 @@ public class App
 
 	private static String strReplace(String str, String regFrom, String strTo) {
 		return str.replaceAll(regFrom, strTo);
+	}
+	private static String findPt(String str, String regFrom, int pos) {
+		Pattern p = Pattern.compile(regFrom);
+		Matcher m = p.matcher(str);
+		while (m.find()) {
+			System.out.println(m.group(pos));
+			System.out.println(m.group(2));
+		}
+		return "";
 	}
 
 	private static boolean strHas(String str, String regFrom) {
