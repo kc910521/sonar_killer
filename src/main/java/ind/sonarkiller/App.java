@@ -10,12 +10,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.sql.rowset.spi.SyncResolver;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -28,19 +31,25 @@ import com.google.gson.JsonObject;
 public class App 
 {
 
-	private static List<File> FILE_LIST = null;
+	private static List<File> FILE_LIST = new LinkedList<>();
 
 	//com/kayak/frame/afs
-	public static void main(String[] args) {
-		FILE_LIST = fd("F:\\cashier-baixin\\src\\com\\kayak\\frame\\afs");// src/com/kayak/pay/action
+	public static void main(String[] args) throws FileNotFoundException {
+		//ypa();
+
+	}
+	//executer
+	private static void ypa() throws FileNotFoundException{
+		//"F:\\cashier-baixin\\src\\com\\kayak"
+		fd("F:\\cashier-baixin\\src\\com\\kayak");// src/com/kayak/pay/action
+		Map<String, Object> constsMap = addTxtToContent();
+		Map<String,Object> constsNbMap = addNumberToContent();
 		FILE_LIST.stream().forEach(f -> {
 			try {
-				Map<String, Object> constsMap = addTxtToContent();
 				removeStrBy(f, constsMap);
 				fillBlankFunc(f);
 				rmCodeBlkComment(f);
 				//
-				Map<String,Long> constsNbMap = addNumberToContent();
 				removeNumberBy(f, constsNbMap);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -52,12 +61,37 @@ public class App
 //		rmCodeBlkComment(new File("F:\\cashier-baixin\\src\\com\\kayak\\frame\\action\\ActionService.java"));
 		
 //		Map<String,Object> hmap = new HashMap<>();
-//		hmap.put("xxx1", "10");
-//		hmap.put("xxx2", "60");
-//		hmap.put("xxx3", "9");
-//		removeNumberBy(new File("F:\\cashier-baixin\\src\\com\\kayak\\frame\\dao\\DaoService.java"), hmap);
+//		hmap.put("xxx1", 10);
+//		hmap.put("xxx3", 10000);
+//		hmap.put("xxx2", 60);
+//		removeNumberBy(new File("F:\\cashier-baixin\\src\\com\\kayak\\frame\\redis\\RedisService.java"), hmap);
 	}
 
+	private static void fd(String fileDir) {//  MTest.fileList
+		File file = new File(fileDir);
+		File[] files = file.listFiles();// 获取目录下的所有文件或文件夹
+		if (files == null) {// 如果目录为空，直接退出
+			return;
+		}
+		// 遍历，目录下的所有文件
+		for (File f : files) {
+			if (f.isFile() 
+					&& f.getName().endsWith(".java") 
+					&& !f.getName().startsWith("ConstFix") 
+					&& !f.getName().startsWith("MTest")
+					&& !f.getName().startsWith("ConstMagicNum")
+					) {
+				FILE_LIST.add(f);
+			} else if (f.isDirectory()) {
+				System.out.println(f.getAbsolutePath());
+				fd(f.getAbsolutePath());
+			}
+		}
+		for (File f1 : FILE_LIST) {
+			System.out.println(f1.getName());
+		}
+	}
+	
 	static int i = 0;
 	
 	private static void rmCodeBlkComment(File f) {
@@ -81,33 +115,42 @@ public class App
 				hasChange = true;
 				fcontent = strReplace(fcontent,"\"" + theVal + "\"", "com.kayak.frame.util.ConstFix." + key);
 			}else {
-				System.out.println("f");
 			}
 		}
 		writeToFile(file, fcontent);
 	}
 	//[\\s|=|>|<|\\(|,|\\+|-|\\*]+
-	private static void removeNumberBy(File file , Map<String, Long> amap) {
+	private static void removeNumberBy(File file , Map<String, Object> amap) {
 		String fcontent = App.readTxtFile(file);
 		boolean hasChange = false;
 		
 		for (String key : amap.keySet()){
+			System.out.println(key);
 			String theVal = amap.get(key).toString();
-			String reg = "[\\s|=|>|<|\\(|,|\\+|-|\\*]+" + theVal + "";
+			// @FIXME
+			String reg = "[\\s|=|>|<|\\(|,|\\+|-|\\*|;|\\)]" + theVal + "[\\s|=|>|<|\\(|,|\\+|-|\\*|;|\\)]";
 			if (strHas(fcontent, reg)) {
-				String rf = strFind(fcontent, reg).replaceAll(theVal, "");
+				String[] rfs = strFind(fcontent, reg).split(theVal);
+				String sfx = null;
+				if (rfs.length == 2){
+					sfx = rfs[1];
+				}else if (rfs.length == 1){
+					sfx = "";
+				}else{
+					sfx = "";
+					System.err.println("rfs " + rfs.length);
+				}
 				System.out.println("true");
 				hasChange = true;
-				fcontent = strReplace(fcontent, reg, rf + "com.kayak.frame.util.ConstMagicNum." + key);
+				fcontent = strReplace(fcontent, reg, rfs[0] + "com.kayak.frame.util.ConstMagicNum." + key + sfx);
 			}else {
-				System.out.println("f");
 			}
 		}
 		writeToFile(file, fcontent);
 	}
 	
 	//处理重复魔法数静态资源和映射
-	private static Map<String, Long> addNumberToContent() throws FileNotFoundException {
+	private static Map<String, Object> addNumberToContent() throws FileNotFoundException {
 		File f = new File("F:\\cashier-baixin\\src\\com\\kayak\\frame\\util\\ConstMagicNum.java");
 		File propf = new File("C:\\Users\\freek\\workspace\\sonarkiller\\src\\main\\java\\ind\\sonarkiller\\json\\tjson_num");
 		if (!f.exists() || !propf.exists()) {
@@ -135,7 +178,7 @@ public class App
 				e.printStackTrace();
 			}
 		});
-		Map<String,Long> resMap = new HashMap<>();
+		Map<String,Object> resMap = new HashMap<>();
 		
 		allParms.forEach(pm -> {
 			String key = randomStr(10) + "_" + (i++);
@@ -219,32 +262,7 @@ public class App
 		return gson.fromJson(str, type);
 	}
 
-	private static List<File> fd(String fileDir) {//  MTest.fileList
-		List<File> fileList = new ArrayList<File>();
-		File file = new File(fileDir);
-		File[] files = file.listFiles();// 获取目录下的所有文件或文件夹
-		if (files == null) {// 如果目录为空，直接退出
-			return null;
-		}
-		// 遍历，目录下的所有文件
-		for (File f : files) {
-			if (f.isFile() 
-					&& f.getName().endsWith(".java") 
-					&& !f.getName().startsWith("ConstFix") 
-					&& !f.getName().startsWith("MTest")
-					&& !f.getName().startsWith("ConstMagicNum")
-					) {
-				fileList.add(f);
-			} else if (f.isDirectory()) {
-				System.out.println(f.getAbsolutePath());
-				fd(f.getAbsolutePath());
-			}
-		}
-		for (File f1 : fileList) {
-			System.out.println(f1.getName());
-		}
-		return fileList;
-	}
+
 	
 	private static long TOTAL_CG = 0;
 
