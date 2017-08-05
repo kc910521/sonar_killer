@@ -129,4 +129,10 @@ public final class Tools {
 		return "";
 	}
 
+	public static long getTOTAL_CG() {
+		return TOTAL_CG;
+	}
+	
+	
+
 }
