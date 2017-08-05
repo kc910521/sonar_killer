@@ -7,7 +7,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -18,11 +17,14 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.sql.rowset.spi.SyncResolver;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+
+import ind.sonarkiller.dec.AbsDecorder;
+import ind.sonarkiller.dec.Chunker;
+import ind.sonarkiller.dec.ReplacerDec;
+
 
 /**
  * Hello world!
@@ -37,17 +39,24 @@ public class App
 	//com/kayak/frame/afs
 	public static void main(String[] args) throws FileNotFoundException {
 		//"F:\\cashier-baixin\\src\\com\\kayak"
-		 fd("F:\\cashier-baixin\\src\\com\\kayak");// src/com/kayak/pay/action
+//		 fd("F:\\cashier-baixin\\src\\com\\kayak");// src/com/kayak/pay/action
 //F:\cashier-baixin\src\com\kayak\consumer\service\HostConsumer.java
 //		rmTypeSpecDmOper(new File("F:\\cashier-baixin\\src\\com\\kayak\\consumer\\service\\PaycoreConsumer.java"));
 		
 		 
-		 FILE_LIST.forEach(f -> {
+//		 FILE_LIST.forEach(f -> {
 //			 rmTypeSpecDmOper(f);
 //			 fillBlankFunc(f);
-		 });
-		 
-		 
+//		 });
+		 Chunker cker = new Chunker();
+		 cker.setFile(new File("C:\\Users\\freek\\Desktop\\111.txt"));
+		 AbsDecorder ck = new ReplacerDec(
+				 new ReplacerDec(cker,
+						 "(=\\s*new\\s.*[List|Map]<).+(>\\(\\))",
+						 "$1$2"),
+				 "List",
+				 "911");
+		 System.out.println(ck.doWork(""));
 		//
 		//ypa();
 		System.out.println("total I/O:" + TOTAL_CG);
@@ -133,12 +142,10 @@ public class App
 	
 	private static void removeStrBy(File file , Map<String, Object> amap) {
 		String fcontent = App.readTxtFile(file);
-		boolean hasChange = false;
 		for (String key : amap.keySet()){
 			String theVal = amap.get(key).toString();
 			if (strHas(fcontent,"\"" + theVal + "\"")) {
 				System.out.println("true");
-				hasChange = true;
 				fcontent = strReplace(fcontent,"\"" + theVal + "\"", "com.kayak.frame.util.ConstFix." + key);
 			}else {
 			}
