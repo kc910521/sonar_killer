@@ -36,8 +36,9 @@ public class App {
 	private static final List<File> FILE_LIST = new LinkedList<>();
 
 	// 解析特定的json文件（PROP_?），得到变量，然后放入类(CLASS_?)存储
-	private static final String CONSTS_PACK_NUM = "com.kayak.pay.utils.ConstMagicNum.";
-	private static final String CONSTS_PACK_STR = "com.kayak.pay.utils.ConstFix.";
+	private static final String BASE_UT_PACK = "com.kayak.pay.utils";
+	private static final String CONSTS_PACK_NUM = "ConstMagicNum";
+	private static final String CONSTS_PACK_STR = "ConstFix";
 	private static final File PROP_NUMBER = new File(
 			"C:\\Users\\freek\\workspace\\sonarkiller\\src\\main\\java\\ind\\sonarkiller\\json\\tjson_num");
 	private static final File CLASS_NUMBER = new File(
@@ -54,29 +55,43 @@ public class App {
 		// F:\cashier-baixin\src\com\kayak\consumer\service\HostConsumer.java
 		// rmTypeSpecDmOper(new
 		// File("F:\\cashier-baixin\\src\\com\\kayak\\consumer\\service\\PaycoreConsumer.java"));
-		// #替换常量
+		// #替换常量 ##########################
+
 		Map<String, Object> numberDict = addNumberToContent();
 		Map<String, Object> strDict = addTxtToContent();
-//		Map<String, Object> numberDictX = findDictByCode();
+//		Map<String, Object> numberDictX = findDictByCode(CLASS_NUMBER);
 		FILE_LIST.forEach(f -> {
 			String content = Tools.readTxtFile(f);
 			String res1 = removeNumberByDict(content, numberDict);
-			res1 = removeStrByDict(res1,strDict);
-			if (!content.equals(res1)){
+			res1 = removeStrByDict(res1, strDict);
+			if (!content.equals(res1)) {
 				Tools.writeToFile(f, res1);
 			}
 		});
-		
-/*		Map<String,Object> amap = new HashMap<>();
-		amap.put("XX", 0);
-		amap.put("XX4", 4);
-		amap.put("XX5", 5);
-		amap.put("XX10", 10);
-		File f = new File("F:\\cashier-manage-api\\src\\com\\kayak\\pay\\utils\\NumCheckUtil.java");
-		
-		String content = Tools.readTxtFile(f);
-		String res = removeNumberByDict(content, amap);
-		System.out.println(res);*/
+
+		// #消除：注释代码，空方法，类型指定 #######
+		// FILE_LIST.forEach(f -> {
+		// Chunker chunker = new Chunker();
+		// chunker.setFile(f);
+		// AbsDecorder ad =
+		// rmTypeSpecDmOper(rmCodeBlkComment(rmTypeSpecDmOper(chunker)));
+		// String finalCode = ad.doWork(null);
+		// if (finalCode != null){
+		// Tools.writeToFile(f, finalCode);
+		// }
+		// });
+
+		// ################this is training grounds
+
+		// Map<String,Object> amap = new HashMap<>(); amap.put("XX2", 2);
+		// amap.put("XX6", 6); amap.put("XX4", 4); amap.put("XX9", 9);
+		// amap.put("XX0", 0);
+		// File f = new File(
+		// "F:\\cashier-manage-api\\src\\com\\kayak\\frame\\util\\ValidateUtil.java"
+		// );
+		// String content = Tools.readTxtFile(f); String res =
+		// removeNumberByDict(content, amap); System.out.println(res);
+
 		// ypa();
 
 		// #######################neo-type invoke
@@ -109,54 +124,84 @@ public class App {
 		return new ReplacerDec(cker, "\\{[\\t|\\n]*\\}", "/** i am blank **/");
 	}
 
-	private static AbsDecorder removeStrBy(Chunk cker) {
-		return new ReplacerDec(cker, "\\{[\\t|\\n]*\\}", "/** i am blank **/");
-	}
-
 	private static AbsDecorder rmCodeBlkComment(Chunk cker) {
-		return new ReplacerDec(cker, "//.*([\\.|=|if|\\{|\\}|\\(|\\)|;|TODO]).*\\n", "/** we were code **/\n");
+		return new ReplacerDec(cker, "//(.*[\\.|=|if|\\{|\\}|\\(|\\)|;|TODO].*)\\n", "/** we were code:$1 **/\n");
 	}
 
 	// 递归会浪费太多空间
 	private static String removeStrByDict(String fcontent, Map<String, Object> amap) {
+		boolean isChanged = false;
 		for (String key : amap.keySet()) {
 			String theVal = amap.get(key).toString();
 			if (Tools.strHas(fcontent, "\"" + theVal + "\"")) {
-				fcontent = Tools.strReplace(fcontent, "\"" + theVal + "\"", App.CONSTS_PACK_STR + key);
+				fcontent = Tools.strReplace(fcontent, "\"" + theVal + "\"", App.CONSTS_PACK_STR + "." + key);
+				isChanged = true;
 			} else {
 			}
+		}
+		if (isChanged){
+			String reg4import = "(^package.*;)(.*)";
+			fcontent = Tools.strReplace(fcontent, reg4import, "$1\nimport "+ BASE_UT_PACK +".*;\n$2");
 		}
 		return fcontent;
 	}
 
-	// [\\s|=|>|<|\\(|,|\\+|-|\\*]+
+	// ([\\s|=|>|<|\\(|,|\\+|-|\\*|;|\\)|{|}|\\[|\\]|:])
 	private static String removeNumberByDict(String fcontent, Map<String, Object> amap) {
+		String regPt1 = "([\\s|=|>|<|\\(|,|\\+|-|\\*|;|\\)|:])";
+
+		int[] a = new int[] { 1, 2 };
+		System.out.println(a[0]);
+		boolean isChanged = false;
 		for (String key : amap.keySet()) {
+
 			String theVal = amap.get(key).toString();
-			String reg = "([\\s|=|>|<|\\(|,|\\+|-|\\*|;|\\)|{|}|\\[|\\]|:])" + theVal + "([\\s|=|>|<|\\(|,|\\+|-|\\*|;|\\)|{|}|\\[|\\]|:])";
+			String reg2 = "(.*\\[)" + theVal + "(\\].*)";
+			String reg3 = "(.*\\{)" + theVal + "(\\}.*\\s;)";
+			
+			String reg = regPt1 + theVal + regPt1;
 			if (Tools.strHas(fcontent, reg)) {
-				fcontent = Tools.strReplace(fcontent, reg, "$1" + App.CONSTS_PACK_NUM + key + "$2");
-			} else {
+				fcontent = Tools.strReplace(fcontent, reg, "$1" + App.CONSTS_PACK_NUM + "." + key + "$2");
+				isChanged = true;
 			}
+			if (Tools.strHas(fcontent, reg2)) {
+				fcontent = Tools.strReplace(fcontent, reg2, "$1" + App.CONSTS_PACK_NUM + "." + key + "$2");
+				isChanged = true;
+			}
+			if (Tools.strHas(fcontent, reg3)) {
+				fcontent = Tools.strReplace(fcontent, reg3, "$1" + App.CONSTS_PACK_NUM + "." + key + "$2");
+				isChanged = true;
+			}
+		}
+		if (isChanged){
+			//(public.*class.+\\s+.*\\{.*)
+			String reg4import = "(^package.*;)(.*)";
+			fcontent = Tools.strReplace(fcontent, reg4import, "$1\nimport "+ BASE_UT_PACK +".*;\n$2");
 		}
 		return fcontent;
 	}
 
 	static int i = 0;
 
-	private static Map<String, Object> findDictByCode(){
-		Map<String,Object> amap = new HashMap<>();
-		String code = Tools.readTxtFile(CLASS_NUMBER);
-		String[] arr1s = code.split("public static final .+\\s+");
-		for (String a1 : arr1s){
-			if (a1.contains("=")){
+	/**
+	 * 得到类中的变量组map
+	 * 
+	 * @param constClazzFile
+	 * @return
+	 */
+	private static Map<String, Object> findDictByCode(File constClazzFile) {
+		Map<String, Object> amap = new HashMap<>();
+		String code = Tools.readTxtFile(constClazzFile);
+		String[] arr1s = code.split("public static final [a-zA-Z\\d_]+\\s+");
+		for (String a1 : arr1s) {
+			if (a1.contains("=")) {
 				String[] inTmps = a1.split("=");
-				amap.put(inTmps[0].trim(), inTmps[1].trim());
+				amap.put(inTmps[0].trim(), inTmps[1].trim().replace(";", ""));
 			}
 		}
 		return amap;
 	}
-	
+
 	// 处理重复魔法数静态资源和映射
 	private static Map<String, Object> addNumberToContent() throws FileNotFoundException {
 		if (!CLASS_NUMBER.exists() || !PROP_NUMBER.exists()) {
@@ -187,7 +232,7 @@ public class App {
 		Map<String, Object> resMap = new HashMap<>();
 
 		allParms.forEach(pm -> {
-			String key = Tools.randomStr(10) + "_" + (i++);
+			String key = "N_" + pm + "_" + Tools.randomStr(6);
 			resMap.put(key, pm);
 			allSent.append("public static final int " + key + " = " + pm + ";\n");
 		});
