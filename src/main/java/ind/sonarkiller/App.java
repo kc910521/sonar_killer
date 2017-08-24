@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,50 +37,72 @@ public class App {
 	private static final List<File> FILE_LIST = new LinkedList<>();
 
 	// 解析特定的json文件（PROP_?），得到变量，然后放入类(CLASS_?)存储
-	private static final String BASE_UT_PACK = "com.kayak.pay.utils";
+	//com.kayak.pay.utils
+	private static final String BASE_UT_PACK = "com.kayak.frame.util";
 	private static final String CONSTS_PACK_NUM = "ConstMagicNum";
 	private static final String CONSTS_PACK_STR = "ConstFix";
 	private static final File PROP_NUMBER = new File(
 			"C:\\Users\\freek\\workspace\\sonarkiller\\src\\main\\java\\ind\\sonarkiller\\json\\tjson_num");
+	//  "F:\\cashier-manage-api\\src\\com\\kayak\\pay\\utils\\ConstMagicNum.java"
+	//  "F:\\cashier-manage-api\\src\\com\\kayak\\pay\\utils\\ConstFix.java"
+	//  
+	//  
 	private static final File CLASS_NUMBER = new File(
-			"F:\\cashier-manage-api\\src\\com\\kayak\\pay\\utils\\ConstMagicNum.java");
+			"F:\\cashier-baixin\\src\\com\\kayak\\frame\\util\\ConstMagicNum.java");
 	private static final File PROP_STR = new File(
 			"C:\\Users\\freek\\workspace\\sonarkiller\\src\\main\\java\\ind\\sonarkiller\\json\\tjson");
 	private static final File CLASS_STR = new File(
-			"F:\\cashier-manage-api\\src\\com\\kayak\\pay\\utils\\ConstFix.java");
+			"F:\\cashier-baixin\\src\\com\\kayak\\frame\\util\\ConstFix.java");
 
 	// run here
 	public static void main(String[] args) throws FileNotFoundException {
 		// "F:\\cashier-baixin\\src\\com\\kayak"
-		fd("F:\\cashier-manage-api\\src\\com");// src/com/kayak/pay/action
+		fd("F:\\cashier-baixin\\src\\com");//F:\\cashier-manage-api\\src\\com//F:\\cashier-baixin\\src\\com
 		// F:\cashier-baixin\src\com\kayak\consumer\service\HostConsumer.java
 		// rmTypeSpecDmOper(new
 		// File("F:\\cashier-baixin\\src\\com\\kayak\\consumer\\service\\PaycoreConsumer.java"));
 		// #替换常量 ##########################
 
-		Map<String, Object> numberDict = addNumberToContent();
-		Map<String, Object> strDict = addTxtToContent();
+//		Map<String, Object> numberDict = addNumberToContent();
+//		Map<String, Object> strDict = addTxtToContent();
 //		Map<String, Object> numberDictX = findDictByCode(CLASS_NUMBER);
-		FILE_LIST.forEach(f -> {
+/*		FILE_LIST.forEach(f -> {
 			String content = Tools.readTxtFile(f);
 			String res1 = removeNumberByDict(content, numberDict);
 			res1 = removeStrByDict(res1, strDict);
 			if (!content.equals(res1)) {
 				Tools.writeToFile(f, res1);
 			}
-		});
-
+		});*/
+		AtomicInteger ai = new AtomicInteger(0);
 		// #消除：注释代码，空方法，类型指定 #######
-		// FILE_LIST.forEach(f -> {
-		// Chunker chunker = new Chunker();
-		// chunker.setFile(f);
-		// AbsDecorder ad =
-		// rmTypeSpecDmOper(rmCodeBlkComment(rmTypeSpecDmOper(chunker)));
-		// String finalCode = ad.doWork(null);
-		// if (finalCode != null){
-		// Tools.writeToFile(f, finalCode);
-		// }
-		// });
+		FILE_LIST.forEach(f -> {
+			Chunker chunker = new Chunker();
+			chunker.setFile(f);
+			AbsDecorder ad = rmCodeBlkComment(chunker);
+			String finalCode = ad.doWork(null);
+			if (finalCode != null && !chunker.getFileContent().equals(finalCode)) {
+				Tools.writeToFile(f, finalCode);
+				ai.addAndGet(1);
+			}
+//			String content = Tools.readTxtFile(f);
+//			rmAA(content, f);
+		});
+		System.out.println(ai.addAndGet(0));
+//		FILE_LIST.forEach(f -> {
+//			Chunker chunker = new Chunker();
+//			chunker.setFile(f);
+//			AbsDecorder ad = rmTypeSpecDmOper(rmCodeBlkComment(rmTypeSpecDmOper(chunker)));
+//			String finalCode = ad.doWork(null);
+//			if (finalCode != null) {
+//				Tools.writeToFile(f, finalCode);
+//			}
+//			String content = Tools.readTxtFile(f);
+//			rmAA(content, f);
+//		});
+//		File ff = new File("F:\\cashier-baixin\\src\\com\\kayak\\frame\\action\\ActionService.java");
+//		String content = Tools.readTxtFile(ff);
+//		rmAA(content,ff);
 
 		// ################this is training grounds
 
@@ -126,6 +149,30 @@ public class App {
 
 	private static AbsDecorder rmCodeBlkComment(Chunk cker) {
 		return new ReplacerDec(cker, "//(.*[\\.|=|if|\\{|\\}|\\(|\\)|;|TODO].*)\\n", "/** we were code:$1 **/\n");
+	}
+	
+	private static void rmAA(String jcontent,File f){
+		//com.kayak.frame.util.
+		String reg = "(((?!import).)*)com\\.kayak\\.frame\\.util\\.([ConstFix|ConstMagicNum].*)";
+		String reg2 = "import\\s+com\\.kayak\\.frame\\.util\\.(((?!options).)*);";//import com.kayak.frame.util.
+		String reg3 = "import\\scom\\.kayak\\.frame\\.util\\.options\\.Options";
+		String CST_OP = "HEHE_WCNM_OK";
+		if (Tools.strHas(jcontent, reg)){
+			boolean repOpt = false;
+			if (Tools.strHas(jcontent, reg3)){
+				repOpt = true;
+				jcontent = Tools.strReplace(jcontent, reg3, CST_OP);
+			}
+			jcontent = Tools.strReplace(jcontent, reg2, "");
+			jcontent = Tools.strReplace(jcontent, reg, "$1$3");
+			String reg4import = "(^package.*;)(.*)";
+			jcontent = Tools.strReplace(jcontent, reg4import, "$1\nimport com.kayak.frame.util.*;\n$2");
+			if (repOpt){
+				jcontent = Tools.strReplace(jcontent, CST_OP, "import com.kayak.frame.util.options.Options");
+			}
+			Tools.writeToFile(f, jcontent);
+		}
+		
 	}
 
 	// 递归会浪费太多空间
