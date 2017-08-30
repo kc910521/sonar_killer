@@ -57,6 +57,7 @@ public class App {
 	// run here
 	public static void main(String[] args) throws FileNotFoundException {
 		// "F:\\cashier-baixin\\src\\com\\kayak"
+		//src/com/kayak/pay/
 		fd("F:\\cashier-baixin\\src\\com");//F:\\cashier-manage-api\\src\\com//F:\\cashier-baixin\\src\\com
 		// F:\cashier-baixin\src\com\kayak\consumer\service\HostConsumer.java
 		// rmTypeSpecDmOper(new
@@ -65,17 +66,18 @@ public class App {
 
 //		Map<String, Object> numberDict = addNumberToContent();
 //		Map<String, Object> strDict = addTxtToContent();
-//		Map<String, Object> numberDictX = findDictByCode(CLASS_NUMBER);
-/*		FILE_LIST.forEach(f -> {
+		Map<String, Object> numberDictX = findDictByCode(CLASS_NUMBER);
+		FILE_LIST.forEach(f -> {
 			String content = Tools.readTxtFile(f);
-			String res1 = removeNumberByDict(content, numberDict);
-			res1 = removeStrByDict(res1, strDict);
+			String res1 = removeNumberByDict(content, numberDictX);
+//			res1 = removeStrByDict(res1, strDict);
 			if (!content.equals(res1)) {
 				Tools.writeToFile(f, res1);
 			}
-		});*/
-		AtomicInteger ai = new AtomicInteger(0);
+		});
+		
 		// #消除：注释代码，空方法，类型指定 #######
+/*		AtomicInteger ai = new AtomicInteger(0);
 		FILE_LIST.forEach(f -> {
 			Chunker chunker = new Chunker();
 			chunker.setFile(f);
@@ -88,7 +90,7 @@ public class App {
 //			String content = Tools.readTxtFile(f);
 //			rmAA(content, f);
 		});
-		System.out.println(ai.addAndGet(0));
+		System.out.println(ai.addAndGet(0));*/
 //		FILE_LIST.forEach(f -> {
 //			Chunker chunker = new Chunker();
 //			chunker.setFile(f);
@@ -195,7 +197,7 @@ public class App {
 
 	// ([\\s|=|>|<|\\(|,|\\+|-|\\*|;|\\)|{|}|\\[|\\]|:])
 	private static String removeNumberByDict(String fcontent, Map<String, Object> amap) {
-		String regPt1 = "([\\s|=|>|<|\\(|,|\\+|-|\\*|;|\\)|:])";
+		String regPt1 = "([\\s|=|\\[|\\]|>|<|\\(|,|\\+|-|\\*|;|\\)|:])";
 
 		int[] a = new int[] { 1, 2 };
 		System.out.println(a[0]);

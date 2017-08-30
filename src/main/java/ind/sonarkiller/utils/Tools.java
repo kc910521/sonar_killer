@@ -3,9 +3,19 @@ package ind.sonarkiller.utils;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,40 +28,41 @@ public final class Tools {
 	
 	// ############### tools
 	public static String readTxtFile(File file) {
-		StringBuffer sb = null;
-		BufferedReader bre = null;
-		try {
-			String encoding = "utf-8";
-			if (file != null && file.isFile() && file.exists()) { // 判断文件是否存在
-				// read = new InputStreamReader(new FileInputStream(file),
-				// encoding);// 考虑到编码格式
-				// BufferedReader bufferedReader = new BufferedReader(read);
-
-				bre = new BufferedReader(new FileReader(file));
-				String lineTxt = null;
-				sb = new StringBuffer();
-				while ((lineTxt = bre.readLine()) != null) {
-					sb.append(lineTxt + "\n");
-				}
-				return sb.toString();
-			} else {
-				System.out.println("找不到指定的文件");
-			}
-		} catch (Exception e) {
-			System.out.println("读取文件内容出错");
-			e.printStackTrace();
-		} finally {
+		StringBuffer sb = new StringBuffer();
+		char[] charCache = null;
+		//字符编码
+		Charset charset = Charset.forName("utf-8");
+		CharBuffer cbuf = CharBuffer.allocate(1024 * 5);
+		ByteBuffer bbuf = ByteBuffer.allocate(1024 * 5);
+		CharsetDecoder charDecoder = charset.newDecoder();
+		try (FileInputStream raf = new FileInputStream(file)){
+			FileChannel fcn = raf.getChannel();
 			try {
-				if (bre != null) {
-					bre.close();
+				while (fcn.read(bbuf) != -1) {
+					bbuf.flip();
+					charDecoder.decode(bbuf, cbuf, true);
+					cbuf.flip();
+					charCache = new char[cbuf.length()];
+					while (cbuf.hasRemaining()){
+						cbuf.get(charCache);
+						String str = new String(charCache);
+						System.out.println(":"+str);
+						sb.append(str);
+						bbuf = ByteBuffer.wrap(str.getBytes());
+					}
+//				bbuf.compact();
+					cbuf.clear();
+					bbuf.clear();
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
 		}
-		return null;
-
+		return sb.toString();
 	}
 	
 	public static String strFind(String str, String regFrom) {
@@ -92,7 +103,23 @@ public final class Tools {
 	private static long TOTAL_CG = 0;
 
 	public static void writeToFile(File file, String content) {
-		BufferedWriter bw = null;
+		
+		try (FileOutputStream raf = new FileOutputStream(file);) {
+			//获取输入通道
+			FileChannel fc_in = raf.getChannel();
+			//读取数据到缓冲区
+            ByteBuffer buf = ByteBuffer.wrap(content.getBytes("utf-8"));
+            buf.put(content.getBytes("utf-8"));
+            buf.flip();
+            fc_in.write(buf);
+//            raf.write(buf.array());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+/*		BufferedWriter bw = null;
 		try {
 			FileWriter fw = new FileWriter(file.getAbsoluteFile());
 			bw = new BufferedWriter(fw);
@@ -110,7 +137,7 @@ public final class Tools {
 					e.printStackTrace();
 				}
 			}
-		}
+		}*/
 	}
 
 
